@@ -13,7 +13,21 @@ pos_y=$((RANDOM%height))
 while true; do
   goal_x=$((RANDOM%width))
   goal_y=$((RANDOM%height))
-  [[ $goal_x -ne $pos_x || $goal_y -ne $pos_y ]] && break
+  [[ $goal_x -ne $pos_x || $goal_y -ne $pos_y ]] && break 
+done
+
+enemy_num=5
+enemy_pos=()
+i=1
+while [[ $i -le $enemy_num ]]; do
+  enemy_x=$((RANDOM%width))
+  enemy_y=$((RANDOM%height))
+  coord="$enemy_x,$enemy_y"
+  
+  if [[ ($enemy_x -ne $pos_x || $enemy_y -ne $pos_y) && ($enemy_x -ne $goal_x || $enemy_y -ne $goal_y) ]]; then
+    enemy_pos+=("$coord") 
+    ((i++))
+  fi
 done
 
 stty -echo -icanon time 0 min 0
@@ -22,13 +36,26 @@ while true; do
 
   for((y=0;y<height;y++)); do
     for((x=0;x<width;x++)); do
+
+      is_enemy=false
+      for e in "${enemy_pos[@]}"; do
+        if [[ "$x,$y" == "$e" ]]; then
+          is_enemy=true
+          break
+        fi
+      done
+
       if [[ $x -eq $pos_x && $y -eq $pos_y ]]; then
-        tput setaf 1
+        tput setaf 4
         echo -n "@"
         tput setaf 3
       elif [[ $x -eq $goal_x && $y -eq $goal_y ]]; then
         tput setaf 2
         echo -n "O"
+        tput setaf 3
+      elif $is_enemy; then
+        tput setaf 1
+        echo -n "*"
         tput setaf 3
       else
         echo -n "."
@@ -38,6 +65,37 @@ while true; do
   done
   echo "Score: $score"
 
+  for e in "${enemy_pos[@]}"; do
+    if [[ "$pos_x,$pos_y" == "$e" ]]; then
+      tput setaf 1
+      echo "Game Over. Press any key to continue, 'Q' to exit."
+      tput setaf 3
+      score=0
+
+      pos_x=$((RANDOM%width))
+      pos_y=$((RANDOM%height))
+
+      while true; do
+        goal_x=$((RANDOM%width))
+        goal_y=$((RANDOM%height))
+        [[ $goal_x -ne $pos_x || $goal_y -ne $pos_y ]] && break
+      done
+
+      enemy_pos=()
+      i=1
+      while [[ $i -le $enemy_num ]]; do
+        enemy_x=$((RANDOM%width))
+        enemy_y=$((RANDOM%height))
+        coord="$enemy_x,$enemy_y"
+        
+        if [[ ($enemy_x -ne $pos_x || $enemy_y -ne $pos_y) && ($enemy_x -ne $goal_x || $enemy_y -ne $goal_y) ]]; then
+          enemy_pos+=("$coord") 
+          ((i++))
+        fi
+      done
+      sleep 0.5
+    fi
+  done
 
   if [[ $pos_x -eq $goal_x && $pos_y -eq $goal_y ]]; then
     tput setaf 2
@@ -53,6 +111,19 @@ while true; do
       goal_y=$((RANDOM%height))
       [[ $goal_x -ne $pos_x || $goal_y -ne $pos_y ]] && break
     done
+
+    enemy_pos=()
+    i=1
+    while [[ $i -le $enemy_num ]]; do
+      enemy_x=$((RANDOM%width))
+      enemy_y=$((RANDOM%height))
+      coord="$enemy_x,$enemy_y"
+      
+      if [[ ($enemy_x -ne $pos_x || $enemy_y -ne $pos_y) && ($enemy_x -ne $goal_x || $enemy_y -ne $goal_y) ]]; then
+        enemy_pos+=("$coord") 
+        ((i++))
+      fi
+    done   
     sleep 0.5
   fi
 
