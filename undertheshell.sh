@@ -5,13 +5,16 @@ tput setaf 3
 
 height=10
 width=10
-posx=5
-posy=5
+posx=$((RANDOM%width))
+posy=$((RANDOM%height))
 
-goalx=$((RANDOM%width))
-[[ $goalx -eq 5 ]] && goalx=9
-goaly=$((RANDOM%height))
-[[ $goaly -eq 5 ]] && goaly=9
+score=0
+
+while true; do
+  goalx=$((RANDOM%width))
+  goaly=$((RANDOM%height))
+  [[ $goalx -ne $posx || $goaly -ne $posy ]] && break
+done
 
 stty -echo -icanon time 0 min 0
 while true; do
@@ -32,12 +35,20 @@ while true; do
     done
     echo
   done
-  echo
+  echo "Score: $score"
+
 
   if [[ $posx -eq $goalx && $posy -eq $goaly ]]; then
     tput setaf 2
-    echo "You Win!"
-    break
+    echo "You reached the goal! Press any key to continue, 'Q' to exit."
+    tput setaf 3
+    ((score++))
+    while true; do
+      goalx=$((RANDOM%width))
+      goaly=$((RANDOM%height))
+      [[ $goalx -ne $posx || $goaly -ne $posy ]] && break
+    done
+    sleep 0.5
   fi
 
   read -n1 key
@@ -47,7 +58,7 @@ while true; do
     d) ((posx++));;
     w) ((posy--));;
     s) ((posy++));;
-    q) break;;
+    q|Q) break;;
   esac
 
   ((posx<0)) && posx=0
