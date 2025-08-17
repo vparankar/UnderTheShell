@@ -8,6 +8,11 @@ width=10
 posx=5
 posy=5
 
+goalx=$((RANDOM%width))
+[[ $goalx -eq 5 ]] && goalx=9
+goaly=$((RANDOM%height))
+[[ $goaly -eq 5 ]] && goaly=9
+
 stty -echo -icanon time 0 min 0
 while true; do
   clear
@@ -17,6 +22,10 @@ while true; do
         tput setaf 1
         echo -n "@"
         tput setaf 3
+      elif [[ $x -eq $goalx && $y -eq $goaly ]]; then
+        tput setaf 2
+        echo -n "O"
+        tput setaf 3
       else
         echo -n "."
       fi
@@ -24,6 +33,12 @@ while true; do
     echo
   done
   echo
+
+  if [[ $posx -eq $goalx && $posy -eq $goaly ]]; then
+    tput setaf 2
+    echo "You Win!"
+    break
+  fi
 
   read -n1 key
 
