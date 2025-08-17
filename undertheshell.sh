@@ -5,27 +5,28 @@ tput setaf 3
 
 height=10
 width=10
-posx=$((RANDOM%width))
-posy=$((RANDOM%height))
-
 score=0
 
+pos_x=$((RANDOM%width))
+pos_y=$((RANDOM%height))
+
 while true; do
-  goalx=$((RANDOM%width))
-  goaly=$((RANDOM%height))
-  [[ $goalx -ne $posx || $goaly -ne $posy ]] && break
+  goal_x=$((RANDOM%width))
+  goal_y=$((RANDOM%height))
+  [[ $goal_x -ne $pos_x || $goal_y -ne $pos_y ]] && break
 done
 
 stty -echo -icanon time 0 min 0
 while true; do
   clear
+
   for((y=0;y<height;y++)); do
     for((x=0;x<width;x++)); do
-      if [[ $x -eq $posx && $y -eq $posy ]]; then
+      if [[ $x -eq $pos_x && $y -eq $pos_y ]]; then
         tput setaf 1
         echo -n "@"
         tput setaf 3
-      elif [[ $x -eq $goalx && $y -eq $goaly ]]; then
+      elif [[ $x -eq $goal_x && $y -eq $goal_y ]]; then
         tput setaf 2
         echo -n "O"
         tput setaf 3
@@ -38,15 +39,19 @@ while true; do
   echo "Score: $score"
 
 
-  if [[ $posx -eq $goalx && $posy -eq $goaly ]]; then
+  if [[ $pos_x -eq $goal_x && $pos_y -eq $goal_y ]]; then
     tput setaf 2
     echo "You reached the goal! Press any key to continue, 'Q' to exit."
     tput setaf 3
     ((score++))
+
+    pos_x=$((RANDOM%width))
+    pos_y=$((RANDOM%height))
+
     while true; do
-      goalx=$((RANDOM%width))
-      goaly=$((RANDOM%height))
-      [[ $goalx -ne $posx || $goaly -ne $posy ]] && break
+      goal_x=$((RANDOM%width))
+      goal_y=$((RANDOM%height))
+      [[ $goal_x -ne $pos_x || $goal_y -ne $pos_y ]] && break
     done
     sleep 0.5
   fi
@@ -54,17 +59,17 @@ while true; do
   read -n1 key
 
   case "$key" in
-    a) ((posx--));;
-    d) ((posx++));;
-    w) ((posy--));;
-    s) ((posy++));;
+    a) ((pos_x--));;
+    d) ((pos_x++));;
+    w) ((pos_y--));;
+    s) ((pos_y++));;
     q|Q) break;;
   esac
 
-  ((posx<0)) && posx=0
-  ((posx>=width)) && posx=$((width-1))
-  ((posy<0)) && posy=0
-  ((posy>=height)) && posy=$((height-1))
+  ((pos_x<0)) && pos_x=0
+  ((pos_x>=width)) && pos_x=$((width-1))
+  ((pos_y<0)) && pos_y=0
+  ((pos_y>=height)) && pos_y=$((height-1))
   
   sleep 0.05
 done
