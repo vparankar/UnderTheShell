@@ -10,27 +10,37 @@ enemy_num=5
 reset_game=true
 
 generate_pos(){
+  local used_coords=()
+  local coords
+
   pos_x=$((RANDOM%width))
-    pos_y=$((RANDOM%height))
+  pos_y=$((RANDOM%height))
+  coords="$pos_x,$pos_y"
+  used_coords+=("$coords")
 
-    while true; do
-      goal_x=$((RANDOM%width))
-      goal_y=$((RANDOM%height))
-      [[ $goal_x -ne $pos_x || $goal_y -ne $pos_y ]] && break
-    done
+  while true; do
+    goal_x=$((RANDOM%width))
+    goal_y=$((RANDOM%height))
+    coords="$goal_x,$goal_y"
+    if [[ ! " ${used_coords[*]} " =~ " $coords " ]]; then
+      used_coords+=("$coords")
+      break
+    fi
+  done
 
-    enemy_pos=()
-    i=1
-    while [[ $i -le $enemy_num ]]; do
-      enemy_x=$((RANDOM%width))
-      enemy_y=$((RANDOM%height))
-      coord="$enemy_x,$enemy_y"
-      
-      if [[ ($enemy_x -ne $pos_x || $enemy_y -ne $pos_y) && ($enemy_x -ne $goal_x || $enemy_y -ne $goal_y) ]]; then
-        enemy_pos+=("$coord") 
-        ((i++))
-      fi
-    done
+  enemy_pos=()
+  i=1
+  while [[ $i -le $enemy_num ]]; do
+    enemy_x=$((RANDOM%width))
+    enemy_y=$((RANDOM%height))
+    coords="$enemy_x,$enemy_y"
+
+    if [[ ! " ${used_coords[*]} " =~ " $coords " ]]; then
+      enemy_pos+=("$coords")
+      used_coords+=("$coords")
+      ((i++))
+    fi
+  done
 }
 
 is_goal(){
@@ -42,7 +52,6 @@ is_enemy(){
   for e in "${enemy_pos[@]}"; do
     if [[ "$1,$2" == "$e" ]]; then
       return 0
-      break
     fi
   done
   return 1
@@ -75,7 +84,6 @@ draw_grid(){
 
 stty -echo -icanon time 0 min 0
 while true; do
-
   if [[ $reset_game == true ]]; then
     generate_pos
     reset_game=false
