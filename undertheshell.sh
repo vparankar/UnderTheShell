@@ -7,16 +7,33 @@ height=10
 width=10
 score=0
 enemy_num=5
+walls_num=10
 reset_game=true
 
 generate_pos(){
   local used_coords=()
   local coords
 
-  pos_x=$((RANDOM%width))
-  pos_y=$((RANDOM%height))
-  coords="$pos_x,$pos_y"
-  used_coords+=("$coords")
+  walls_pos=()
+  while [[ ${#walls_pos[@]} -lt $walls_num ]]; do
+    walls_x=$((RANDOM%width))
+    walls_y=$((RANDOM%height))
+    coords="$walls_x,$walls_y"
+    if [[ ! " ${used_coords[*]} " =~ " $coords " ]]; then
+      walls_pos+=("$coords")
+      used_coords+=("$coords")
+    fi
+  done
+
+  while true; do
+    pos_x=$((RANDOM%width))
+    pos_y=$((RANDOM%height))
+    coords="$pos_x,$pos_y"
+    if [[ ! " ${used_coords[*]} " =~ " $coords " ]]; then
+      used_coords+=("$coords")
+      break
+    fi
+  done
 
   while true; do
     goal_x=$((RANDOM%width))
@@ -29,8 +46,7 @@ generate_pos(){
   done
 
   enemy_pos=()
-  i=1
-  while [[ $i -le $enemy_num ]]; do
+  while [[ ${#enemy_pos[@]} -lt $enemy_num ]]; do
     enemy_x=$((RANDOM%width))
     enemy_y=$((RANDOM%height))
     coords="$enemy_x,$enemy_y"
@@ -38,7 +54,6 @@ generate_pos(){
     if [[ ! " ${used_coords[*]} " =~ " $coords " ]]; then
       enemy_pos+=("$coords")
       used_coords+=("$coords")
-      ((i++))
     fi
   done
 }
@@ -51,6 +66,15 @@ is_goal(){
 is_enemy(){
   for e in "${enemy_pos[@]}"; do
     if [[ "$1,$2" == "$e" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+is_wall(){
+  for w in "${walls_pos[@]}"; do
+    if [[ "$1,$2" == "$w" ]]; then
       return 0
     fi
   done
@@ -72,6 +96,10 @@ draw_grid(){
       elif is_enemy $x $y; then
         tput setaf 1
         echo -n "*"
+        tput setaf 3
+      elif is_wall $x $y; then
+        tput setaf 7
+        echo -n "#"
         tput setaf 3
       else
         echo -n "."
@@ -108,13 +136,20 @@ while true; do
 
   read -n1 key
 
+  new_x=$pos_x
+  new_y=$pos_y
   case "$key" in
-    a) ((pos_x--));;
-    d) ((pos_x++));;
-    w) ((pos_y--));;
-    s) ((pos_y++));;
+    a) ((new_x--));;
+    d) ((new_x++));;
+    w) ((new_y--));;
+    s) ((new_y++));;
     q|Q) break;;
   esac
+
+  if ! is_wall $new_x $new_y; then
+    pos_x=$new_x
+    pos_y=$new_y
+  fi
 
   ((pos_x<0)) && pos_x=0
   ((pos_x>=width)) && pos_x=$((width-1))
