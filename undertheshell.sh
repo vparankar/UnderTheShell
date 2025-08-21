@@ -3,8 +3,8 @@
 clear
 tput setaf 3
 
-height=21
-width=21
+height=11
+width=55
 score=0
 enemy_num=5
 reset_game=true
@@ -16,7 +16,7 @@ reset_grid(){
   grid=()
   for((y=0; y<height; y++)); do
     for((x=0; x<width; x++)); do
-      grid[$(($y*$width+$x))]="#"
+      grid[$(($y*$width+$x))]="▓"
     done
   done
 
@@ -60,7 +60,7 @@ is_goal(){
 }
 
 is_wall(){
-  if [[ "${grid[$(($2*width+$1))]}" == "#" ]]; then
+  if [[ "${grid[$(($2*width+$1))]}" == "▓" ]]; then
     return 0
   fi
   return 1
@@ -87,17 +87,31 @@ draw_grid(){
   echo "Score: $score"
 }
 
+update_grid() {
+  tput cup $old_y $old_x
+  echo -n "."
+
+  tput cup $pos_y $pos_x
+  tput setaf 4; echo -n "@"; tput setaf 3
+
+  tput cup $height 0
+  echo "Score: $score            "
+}
+
 stty -echo -icanon time 0 min 0
 while true; do
   if [[ $reset_game == true ]]; then
     reset_grid
     carve_path 1 1
     goto_start
-    reset_game=false
-  fi
 
-  clear
-  draw_grid
+    clear
+    draw_grid
+
+    reset_game=false
+  else
+    update_grid
+  fi
 
   if is_goal $pos_x $pos_y; then
     tput setaf 2
@@ -109,19 +123,20 @@ while true; do
 
   read -n1 key
 
-  new_x=$pos_x
-  new_y=$pos_y
+  old_x=$pos_x
+  old_y=$pos_y
+
   case "$key" in
-    a) ((new_x--));;
-    d) ((new_x++));;
-    w) ((new_y--));;
-    s) ((new_y++));;
+    a) ((pos_x--));;
+    d) ((pos_x++));;
+    w) ((pos_y--));;
+    s) ((pos_y++));;
     q|Q) break;;
   esac
 
-  if ! is_wall $new_x $new_y; then
-    pos_x=$new_x
-    pos_y=$new_y
+  if is_wall $pos_x $pos_y; then
+    pos_x=$old_x
+    pos_y=$old_y
   fi
 
   sleep 0.05
