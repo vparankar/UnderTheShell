@@ -3,59 +3,55 @@
 clear
 tput setaf 3
 
-height=10
-width=10
+height=21
+width=21
 score=0
 enemy_num=5
-walls_num=10
 reset_game=true
 
-generate_pos(){
-  local used_coords=()
-  local coords
+goal_x=$((width-2))
+goal_y=$((height-2))
 
-  walls_pos=()
-  while [[ ${#walls_pos[@]} -lt $walls_num ]]; do
-    walls_x=$((RANDOM%width))
-    walls_y=$((RANDOM%height))
-    coords="$walls_x,$walls_y"
-    if [[ ! " ${used_coords[*]} " =~ " $coords " ]]; then
-      walls_pos+=("$coords")
-      used_coords+=("$coords")
-    fi
+reset_grid(){
+  grid=()
+  for((y=0; y<height; y++)); do
+    for((x=0; x<width; x++)); do
+      grid[$(($y*$width+$x))]="#"
+    done
   done
 
-  while true; do
-    pos_x=$((RANDOM%width))
-    pos_y=$((RANDOM%height))
-    coords="$pos_x,$pos_y"
-    if [[ ! " ${used_coords[*]} " =~ " $coords " ]]; then
-      used_coords+=("$coords")
-      break
-    fi
-  done
+  unset visited
+  declare -Ag visited
+}
 
-  while true; do
-    goal_x=$((RANDOM%width))
-    goal_y=$((RANDOM%height))
-    coords="$goal_x,$goal_y"
-    if [[ ! " ${used_coords[*]} " =~ " $coords " ]]; then
-      used_coords+=("$coords")
-      break
-    fi
-  done
+carve_path(){
+  local x=$1
+  local y=$2
 
-  enemy_pos=()
-  while [[ ${#enemy_pos[@]} -lt $enemy_num ]]; do
-    enemy_x=$((RANDOM%width))
-    enemy_y=$((RANDOM%height))
-    coords="$enemy_x,$enemy_y"
+  visited["$x,$y"]=1
+  grid[$(($y*$width+$x))]="."
 
-    if [[ ! " ${used_coords[*]} " =~ " $coords " ]]; then
-      enemy_pos+=("$coords")
-      used_coords+=("$coords")
+  dirs=("up" "right" "left" "down")
+  dirs=($(shuf -e "${dirs[@]}"))
+
+  for dir in "${dirs[@]}"; do
+    case "$dir" in
+      up) nx=$x; ny=$(($y-2)); wx=$x; wy=$(($y-1));; 
+      right) nx=$(($x+2)); ny=$y; wx=$(($x+1)); wy=$y;;
+      left) nx=$(($x-2)); ny=$y; wx=$(($x-1)); wy=$y;;
+      down) nx=$x; ny=$((y+2)); wx=$x; wy=$((y+1));;
+    esac
+
+    if [[ ($nx -ge 0 && $nx -lt $width && $ny -ge 0 && $ny -lt $height) && -z ${visited["$nx,$ny"]} ]]; then
+      grid[$((wy*width+wx))]="."
+      carve_path "$nx" "$ny"
     fi
-  done
+  done 
+}
+
+goto_start(){
+  pos_x=1
+  pos_y=1
 }
 
 is_goal(){
@@ -63,21 +59,10 @@ is_goal(){
   return 1
 }
 
-is_enemy(){
-  for e in "${enemy_pos[@]}"; do
-    if [[ "$1,$2" == "$e" ]]; then
-      return 0
-    fi
-  done
-  return 1
-}
-
 is_wall(){
-  for w in "${walls_pos[@]}"; do
-    if [[ "$1,$2" == "$w" ]]; then
-      return 0
-    fi
-  done
+  if [[ "${grid[$(($2*width+$1))]}" == "#" ]]; then
+    return 0
+  fi
   return 1
 }
 
@@ -93,16 +78,8 @@ draw_grid(){
         tput setaf 2
         echo -n "O"
         tput setaf 3
-      elif is_enemy $x $y; then
-        tput setaf 1
-        echo -n "*"
-        tput setaf 3
-      elif is_wall $x $y; then
-        tput setaf 7
-        echo -n "#"
-        tput setaf 3
       else
-        echo -n "."
+        echo -n "${grid[$(($y*$width+$x))]}"
       fi
     done
     echo
@@ -113,20 +90,16 @@ draw_grid(){
 stty -echo -icanon time 0 min 0
 while true; do
   if [[ $reset_game == true ]]; then
-    generate_pos
+    reset_grid
+    carve_path 1 1
+    goto_start
     reset_game=false
   fi
 
   clear
   draw_grid
 
-  if is_enemy $pos_x $pos_y; then
-    tput setaf 1
-    echo "Game Over. Press any key to continue, 'Q' to exit."
-    tput setaf 3
-    score=0
-    reset_game=true
-  elif is_goal $pos_x $pos_y; then
+  if is_goal $pos_x $pos_y; then
     tput setaf 2
     echo "You reached the goal! Press any key to continue, 'Q' to exit."
     tput setaf 3
@@ -151,11 +124,6 @@ while true; do
     pos_y=$new_y
   fi
 
-  ((pos_x<0)) && pos_x=0
-  ((pos_x>=width)) && pos_x=$((width-1))
-  ((pos_y<0)) && pos_y=0
-  ((pos_y>=height)) && pos_y=$((height-1))
-  
   sleep 0.05
 done
 
