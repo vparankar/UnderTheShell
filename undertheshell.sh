@@ -310,8 +310,8 @@ while true; do
   esac
 
   # Interaction Logic
-  local target_idx=$((ny*width+nx))
-  local target_char="${grid[$target_idx]}"
+  target_idx=$((ny*width+nx))
+  target_char="${grid[$target_idx]}"
 
   if [[ "$target_char" != "▓" ]]; then
     pos_x=$nx
